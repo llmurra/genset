@@ -1,0 +1,16 @@
+Package: genset
+Type: Package
+Title: Generates Data Sets for Class Demonstrations
+Version: 0.1.0
+Author: Lori Murray [aut, cre], John Wilson [aut, cre]
+Maintainer: Lori Murray <lori.murray@uwo.ca>
+Description: For educational purposes to demonstrate the importance of multiple regression. The genset function generates a data set from an initial data set to have the same summary statistics (mean, median, and standard deviation) but opposing regression results.
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+Suggests: 
+    knitr,
+    rmarkdown,
+    testthat
+VignetteBuilder: knitr
+RoxygenNote: 7.1.1

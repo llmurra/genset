@@ -1,0 +1,192 @@
+---
+title: "Introduction"
+author: "L. Murray & J. Wilson"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library('genset')
+```
+
+
+## Introduction
+
+This package was developed for educational purposes to demonstrate the importance of multiple regression. `genset` generates a data set from an initial data set to have the same summary statistics (mean, median, and standard deviation) but opposing regression results. The initial data set will have one response variable (continuous) and two predictor variables (continous or one continuous and one categorical with 2 levels) that are statistically significant in a linear regression model such as $Y = X\beta + \epsilon$.
+
+## Functions
+
+Use the following function if your data set consist of 2 predictor variables (both continuous):
+
+`genset(y=y, x1=x1, x2=x2, method=1, option="x1", n=n)`
+
+
+Use the following function if your data set consist of 2 predictor variables (1 continuous and 1 categorical with 2 levels): 
+
+`genset(y=y, x1=x1, x2=factor(x2), method=1, option="x1", n=n)`
+
+
+## Arguments
+- `y` a vector containing the response variable (continuous). 
+- `x1` a vector containing the first predictor variable (continuous).
+- `x2` a vector containing the second predictor variable (continuous or categorical with 2 levels). If variable is categorical then argument is `factor(x2)`.
+- method the method `1` or `2` to be used to generate the data set. `1` (default) rearranges the values within each variable, and `2` is a perturbation method that makes subtle changes to the values of the variables.
+- option the variable(s) that will not statistically significant in the new data set (`"x1"`, `"x2"` or - `"both"`).
+- `n` the number of iterations. 
+
+
+## Details
+
+The summary statistics are within a (predetermined) tolerance level, and when rounded will be the same as the original data set. We use the standard convention 0.05 as the significance level. The default for the number of iterations is `n=2000`. Less than `n=2000` may or may not be sufficient and is dependent on the initial data set.
+
+## Value
+
+Returns an object of class "data.frame" containing the generated data set: (in order) the response variable, first predictor variable and second predictor variable.
+
+## Example 1: Two Continuous Predictor Variables
+
+Load the `genset` library:
+
+```{r}
+library('genset')
+```
+
+We will use the built-in data set `mtcars` to illustrate how to generate a new data set. Details about the data set can be found by typing `?mtcars`. We set the variable `mpg` as the response variable `y`, and `hp` and `wt` as the two continous predictor variables (`x1` and `x2`). Then we combine the variables into a data frame called `set1`.  
+
+```{r}
+y <- mtcars$mpg
+x1 <- mtcars$hp
+x2 <- mtcars$wt
+```
+
+```{r}
+set1 <- data.frame(y, x1, x2)
+```
+
+
+We check the summary statistics (mean, median, and standard deviation) for the response variable and two predictor variables using the `round()` function. We round the statistics to the first significant digit of that variable. The `multi.fun()` is created for the convenience. 
+
+```{r}
+multi.fun <- function(x) {
+  c(mean = mean(x), media=median(x), sd=sd(x))
+}
+round(multi.fun(set1$y), 1)
+round(multi.fun(set1$x1), 0)
+round(multi.fun(set1$x2), 3)
+```
+
+We fit a linear model to the data set using the function `lm()` and check to see that both predictor variables are statistically significant (p-value < 0.05).
+
+```{r}
+summary(lm(y ~ x1, x2, data=set1))
+```
+
+We set the function arguments of `genset()` to generate a new data set (`set2`) that will make the first predictor variable `hp`, no longer statistically significant using method `2`. We will use the function `set.seed()` so that the data set can be reproduced.
+
+```{r}
+set.seed(101)
+set2 <- genset(y, x1, x2, method=1, option="x1")
+```
+
+Check that the summary statisticis for Set 2 are the same as Set 1 above.  
+
+```{r}
+round(multi.fun(set2$y), 1)
+round(multi.fun(set2$x1), 0)
+round(multi.fun(set2$x2), 3)
+```
+
+Fit a linear model to Set 2 and check to see that the first predictor variable `hp` is no longer statistically significant. 
+
+```{r}
+summary(lm(y ~ x1 + x2, data=set2))
+```
+
+
+## Example 2: Two Predictor Variables (1 Continuous, 1 Categorical)
+
+This time we will use a categorical predictor variable engine `vs` where `0` is V-shaped and `1` is straight. We will use the same response variable `mpg` and predictor variable `wt` making the categorical or factor variable is assigned to `x2`. Combine the three variables in a data frame called `set3`.  
+
+```{r}
+y <- mtcars$mpg
+x1 <- mtcars$wt
+x2 <- mtcars$vs
+```
+
+```{r}
+set3 <- data.frame(y, x1, x2)
+```
+
+Since we have a categorical predictor variable, we need to subset the data. Then we can check the summary statistics (mean, median, and standard deviation) for the response variable and predictor variable in terms of the categorical variable (ie. the marginal distributions for `vs`) We round the statistics to the first significant digit of that variable. 
+
+```{r}
+v.shape <- subset(set3, x2==0)
+straight <- subset(set3, x2==1) 
+```
+
+```{r}
+multi.fun <- function(x) {
+  c(mean = mean(x), media=median(x), sd=sd(x))
+}
+round(multi.fun(v.shape$y), 1)
+round(multi.fun(v.shape$x1), 3)
+round(multi.fun(straight$y), 1)
+round(multi.fun(straight$x1), 3)
+```
+
+We fit a linear model to the data set using the function `lm()` and check to see that both predictor variables are statistically significant.   
+
+```{r}
+summary(lm(y ~ x1 + factor(x2), data=set3))
+```
+
+We set the function arguments of `genset()` to generate a new data set (`set4`) that will make the second predictor variable `vs`, no longer statistically significant using method `2`. We will use the function `set.seed()` so that the data set can be reproduced. Note that `factor(x2)` must be used in the formula argument when the variable is categorical.
+
+```{r}
+set.seed(123)
+set4 <- genset(y, x1, factor(x2), method=2, option="x2")
+```
+
+Check that the summary statisticis for the marginal distributions of Set 4 are the same as Set 3 above. 
+
+```{r}
+v.shape <- subset(set4, x2==0)
+straight <- subset(set4, x2==1) 
+```
+
+```{r}
+multi.fun <- function(x) {
+  c(mean = mean(x), media=median(x), sd=sd(x))
+}
+round(multi.fun(v.shape$y), 1)
+round(multi.fun(v.shape$x1), 3)
+round(multi.fun(straight$y), 1)
+round(multi.fun(straight$x1), 3)
+```
+
+Fit a linear model to Set 4 and check to see that the second predictor variable `vs` is no longer statistically significant. 
+
+```{r}
+summary(lm(y ~ x1 + factor(x2), data=set4))
+```
+
+
+```{r, echo=FALSE, include=FALSE, results='asis'}
+knitr::kable(head(set1, 10))
+```
+
+
+## References
+Murray, L. and Wilson, J. (2020). The Need for Regression: Generating Multiple Data Sets with Identical Summary Statistics but Differing Conclusions. *Decision Sciences Journal of Innovative Education.* Accepted for publication.
+
